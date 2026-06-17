@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/vpn_provider.dart';
+import '../models/vpn_models.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,27 +14,102 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _serverController = TextEditingController(text: 'https://servico.mobap.com.br:3007');
+  SshAccount? _selectedServer;
+  List<SshAccount> _servers = [];
+  bool _loadingServers = false;
+  bool _registering = false;
+  final _nameController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServers();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _serverController.dispose();
+    _nameController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  Future<void> _loadServers() async {
+    setState(() => _loadingServers = true);
+    try {
+      final provider = context.read<VpnProvider>();
+      await provider.fetchPublicServers();
+      setState(() {
+        _servers = provider.publicServers;
+        _loadingServers = false;
+        if (_servers.isNotEmpty) {
+          _selectedServer = _servers.first;
+        }
+      });
+    } catch (e) {
+      setState(() => _loadingServers = false);
+    }
+  }
+
   Future<void> _login() async {
+    if (_selectedServer == null) {
+      _showError('Selecione um servidor');
+      return;
+    }
     final provider = context.read<VpnProvider>();
     provider.setBaseUrl(_serverController.text.trim());
 
     final success = await provider.login(
       _emailController.text.trim(),
       _passwordController.text,
+      _selectedServer!,
     );
 
     if (success && mounted) {
       Navigator.pushReplacementNamed(context, '/home');
     }
+  }
+
+  Future<void> _register() async {
+    if (_selectedServer == null) {
+      _showError('Selecione um servidor');
+      return;
+    }
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showError('Senhas não conferem');
+      return;
+    }
+    final provider = context.read<VpnProvider>();
+    provider.setBaseUrl(_serverController.text.trim());
+
+    final success = await provider.register(
+      _nameController.text.trim(),
+      _emailController.text.trim(),
+      _passwordController.text,
+      _selectedServer!,
+    );
+
+    if (success && mounted) {
+      setState(() => _registering = false);
+      _showSuccess('Cadastro realizado! Aguarde liberação do administrador.');
+    }
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccess(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.green),
+    );
   }
 
   @override
@@ -73,7 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Title
                 const Text(
                   'CodVibe VPN',
                   style: TextStyle(
@@ -84,32 +159,87 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Acesse o servidor com sua conta',
+                  _registering ? 'Crie sua conta' : 'Selecione o servidor e faça login',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[400],
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
 
-                // Servidor
-                TextField(
-                  controller: _serverController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Servidor',
-                    prefixIcon: const Icon(Icons.dns_outlined, color: Color(0xFF6C5CE7)),
-                    filled: true,
-                    fillColor: const Color(0xFF1A1A2E),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    labelStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
+                // Server Picker
+                _loadingServers
+                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    : _servers.isEmpty
+                        ? TextField(
+                            controller: _serverController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: 'URL do Servidor',
+                              prefixIcon: const Icon(Icons.dns_outlined, color: Color(0xFF6C5CE7)),
+                              filled: true,
+                              fillColor: const Color(0xFF1A1A2E),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              labelStyle: const TextStyle(color: Colors.grey),
+                            ),
+                          )
+                        : DropdownButtonFormField<SshAccount>(
+                            value: _selectedServer,
+                            dropdownColor: const Color(0xFF1A1A2E),
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: 'Servidor',
+                              prefixIcon: const Icon(Icons.dns_outlined, color: Color(0xFF6C5CE7)),
+                              filled: true,
+                              fillColor: const Color(0xFF1A1A2E),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              labelStyle: const TextStyle(color: Colors.grey),
+                            ),
+                            items: _servers.map((s) {
+                              return DropdownMenuItem<SshAccount>(
+                                value: s,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _getOperatorIcon(s.label ?? ''),
+                                      size: 18,
+                                      color: _getOperatorColor(s.label ?? ''),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(s.label ?? s.name),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (v) => setState(() => _selectedServer = v),
+                          ),
                 const SizedBox(height: 16),
+
+                if (_registering) ...[
+                  TextField(
+                    controller: _nameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Nome',
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF6C5CE7)),
+                      filled: true,
+                      fillColor: const Color(0xFF1A1A2E),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      labelStyle: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Email
                 TextField(
@@ -147,7 +277,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelStyle: const TextStyle(color: Colors.grey),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                if (_registering)
+                  TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Confirmar Senha',
+                      prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF6C5CE7)),
+                      filled: true,
+                      fillColor: const Color(0xFF1A1A2E),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      labelStyle: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
 
                 // Error
                 if (provider.error != null)
@@ -178,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: provider.isLoading ? null : _login,
+                    onPressed: provider.isLoading ? null : (_registering ? _register : _login),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6C5CE7),
                       foregroundColor: Colors.white,
@@ -196,10 +346,24 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            'Entrar',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        : Text(
+                            _registering ? 'Cadastrar' : 'Entrar',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Toggle register/login
+                TextButton(
+                  onPressed: () {
+                    setState(() => _registering = !_registering);
+                  },
+                  child: Text(
+                    _registering
+                        ? 'Já tem conta? Faça login'
+                        : 'Não tem conta? Cadastre-se',
+                    style: const TextStyle(color: Color(0xFF6C5CE7)),
                   ),
                 ),
               ],
@@ -208,5 +372,21 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Color _getOperatorColor(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('tim')) return const Color(0xFF003A70);
+    if (l.contains('vivo')) return const Color(0xFF660099);
+    if (l.contains('claro')) return const Color(0xFFFF0000);
+    return const Color(0xFF6C5CE7);
+  }
+
+  IconData _getOperatorIcon(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('tim') || l.contains('vivo') || l.contains('claro')) {
+      return Icons.sim_card;
+    }
+    return Icons.dns;
   }
 }

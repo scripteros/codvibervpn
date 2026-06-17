@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+android/.gradle/
+android/app/build/
+flutter-app/.dart_tool/
+flutter-app/.packages
+flutter-app/build/
+flutter-app/.flutter-plugins
+flutter-app/.flutter-plugins-dependencies
+flutter-app/ios/Pods/
+flutter-app/ios/.symlinks/

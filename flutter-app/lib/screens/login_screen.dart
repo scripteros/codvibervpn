@@ -10,21 +10,26 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _hostController = TextEditingController(text: 'servico.mobap.com.br');
+  final _serverController = TextEditingController(text: 'https://servico.mobap.com.br:3007');
 
   @override
   void dispose() {
+    _emailController.dispose();
     _passwordController.dispose();
-    _hostController.dispose();
+    _serverController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
     final provider = context.read<VpnProvider>();
-    provider.setServer(_hostController.text.trim(), 3006);
+    provider.setBaseUrl(_serverController.text.trim());
 
-    final success = await provider.login(_passwordController.text);
+    final success = await provider.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
     if (success && mounted) {
       Navigator.pushReplacementNamed(context, '/home');
@@ -70,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Title
                 const Text(
-                  'Hermes VPN',
+                  'CodVibe VPN',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -79,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Conecte-se ao seu servidor com segurança',
+                  'Acesse o servidor com sua conta',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[400],
@@ -90,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Servidor
                 TextField(
-                  controller: _hostController,
+                  controller: _serverController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Servidor',
@@ -106,7 +111,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Senha
+                // Email
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6C5CE7)),
+                    filled: true,
+                    fillColor: const Color(0xFF1A1A2E),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    labelStyle: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Password
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -149,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                // Botão Login
+                // Login button
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -173,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           )
                         : const Text(
-                            'Conectar',
+                            'Entrar',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                   ),

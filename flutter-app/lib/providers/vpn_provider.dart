@@ -5,51 +5,63 @@ import 'package:http/http.dart' as http;
 import '../models/vpn_models.dart';
 
 class VpnProvider extends ChangeNotifier {
-  VpnServer _server = VpnServer(host: 'servico.mobap.com.br', port: 3006);
+  String _baseUrl = 'https://servico.mobap.com.br:3007';
+  String? _token;
+  VpnUser? _user;
   VpnStatus? _status;
   List<VpnClient> _clients = [];
+  List<SshAccount> _sshAccounts = [];
+  List<Payload> _payloads = [];
   bool _isLoading = false;
   String? _error;
   bool _authenticated = false;
 
-  VpnServer get server => _server;
+  String get baseUrl => _baseUrl;
+  String? get token => _token;
+  VpnUser? get user => _user;
   VpnStatus? get status => _status;
   List<VpnClient> get clients => _clients;
+  List<SshAccount> get sshAccounts => _sshAccounts;
+  List<Payload> get payloads => _payloads;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get authenticated => _authenticated;
 
-  void setServer(String host, int port) {
-    _server = VpnServer(host: host, port: port);
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (_token != null) 'Authorization': 'Bearer $_token',
+      };
+
+  void setBaseUrl(String url) {
+    _baseUrl = url;
     notifyListeners();
   }
 
-  void setToken(String token) {
-    _server = VpnServer(host: _server.host, port: _server.port, token: token);
-    notifyListeners();
-  }
-
-  Future<bool> login(String password) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final response = await http.post(
-        Uri.parse('${_server.baseUrl}/api/auth/login'),
+        Uri.parse('$_baseUrl/api/auth/user-login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'password': password}),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
+      final data = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setToken(data['token'] as String);
+        _token = data['token'] as String;
+        _user = VpnUser.fromJson(data['user']);
         _authenticated = true;
         _isLoading = false;
         notifyListeners();
+        // Fetch configs in background
+        fetchUserConfigs();
         return true;
       } else {
-        _error = 'Senha incorreta';
+        _error = data['error'] ?? 'Erro ao autenticar';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -62,114 +74,65 @@ class VpnProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchStatus() async {
+  Future<void> fetchUserConfigs() async {
+    try {
+      // Fetch SSH accounts for this user
+      final sshResp = await http.get(
+        Uri.parse('$_baseUrl/api/tunnels/ssh'),
+        headers: _headers,
+      );
+      if (sshResp.statusCode == 200) {
+        final d = jsonDecode(sshResp.body);
+        _sshAccounts = (d['accounts'] as List?)
+                ?.map((a) => SshAccount.fromJson(a))
+                .toList() ??
+            [];
+      }
+
+      // Fetch payloads for this user
+      final payloadResp = await http.get(
+        Uri.parse('$_baseUrl/api/tunnels/payloads'),
+        headers: _headers,
+      );
+      if (payloadResp.statusCode == 200) {
+        final d = jsonDecode(payloadResp.body);
+        _payloads = (d['payloads'] as List?)
+                ?.map((p) => Payload.fromJson(p))
+                .toList() ??
+            [];
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching configs: $e');
+    }
+  }
+
+  Future<void> checkExpiry() async {
+    if (_token == null) return;
     try {
       final response = await http.get(
-        Uri.parse('${_server.baseUrl}/api/vpn/status'),
-        headers: _server.headers,
+        Uri.parse('$_baseUrl/api/auth/user-verify'),
+        headers: _headers,
       );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _status = VpnStatus.fromJson(data);
+      if (response.statusCode != 200) {
+        _authenticated = false;
+        _error = 'Sessão expirada. Faça login novamente.';
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Erro ao buscar status: $e');
+      debugPrint('Error checking expiry: $e');
     }
-  }
-
-  Future<bool> toggleVpn(bool enable) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final response = await http.post(
-        Uri.parse('${_server.baseUrl}/api/vpn/toggle'),
-        headers: _server.headers,
-        body: jsonEncode({'enable': enable}),
-      );
-
-      if (response.statusCode == 200) {
-        _isLoading = false;
-        await fetchStatus();
-        return true;
-      }
-    } catch (e) {
-      _error = 'Erro ao alternar VPN: $e';
-    }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
-  }
-
-  Future<void> fetchClients() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${_server.baseUrl}/api/vpn/clients'),
-        headers: _server.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _clients = (data['clients'] as List)
-            .map((c) => VpnClient.fromJson(c))
-            .toList();
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Erro ao buscar clientes: $e');
-    }
-  }
-
-  Future<bool> addClient(String name, String allowedIPs) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final response = await http.post(
-        Uri.parse('${_server.baseUrl}/api/vpn/clients'),
-        headers: _server.headers,
-        body: jsonEncode({'name': name, 'allowedIPs': allowedIPs}),
-      );
-
-      if (response.statusCode == 200) {
-        _isLoading = false;
-        await fetchClients();
-        return true;
-      }
-    } catch (e) {
-      _error = 'Erro ao adicionar cliente: $e';
-    }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
-  }
-
-  Future<String?> getClientConfig(String clientId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('${_server.baseUrl}/api/vpn/clients/$clientId/config'),
-        headers: _server.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['config'] as String?;
-      }
-    } catch (e) {
-      debugPrint('Erro ao buscar config: $e');
-    }
-    return null;
   }
 
   void logout() {
+    _token = null;
+    _user = null;
     _authenticated = false;
     _status = null;
     _clients = [];
-    _server = VpnServer(host: _server.host, port: _server.port);
+    _sshAccounts = [];
+    _payloads = [];
     notifyListeners();
   }
 }

@@ -17,6 +17,134 @@ class VpnServer {
       };
 }
 
+class VpnUser {
+  final int id;
+  final String name;
+  final String email;
+  final String? phone;
+  final String? deviceName;
+  final String? expiresAt;
+  final int daysLeft;
+  final int maxSpeedMbps;
+  final int downloadBytes;
+  final int uploadBytes;
+
+  VpnUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.phone,
+    this.deviceName,
+    this.expiresAt,
+    this.daysLeft = -1,
+    this.maxSpeedMbps = 100,
+    this.downloadBytes = 0,
+    this.uploadBytes = 0,
+  });
+
+  factory VpnUser.fromJson(Map<String, dynamic> json) {
+    return VpnUser(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      phone: json['phone'] as String?,
+      deviceName: json['deviceName'] as String?,
+      expiresAt: json['expiresAt'] as String?,
+      daysLeft: json['daysLeft'] as int? ?? -1,
+      maxSpeedMbps: json['maxSpeedMbps'] as int? ?? 100,
+      downloadBytes: json['downloadBytes'] as int? ?? 0,
+      uploadBytes: json['uploadBytes'] as int? ?? 0,
+    );
+  }
+
+  bool get isExpired => expiresAt != null && DateTime.parse(expiresAt!).isBefore(DateTime.now());
+  bool get isUnlimited => daysLeft == -1;
+  String get expiryText {
+    if (isUnlimited) return 'Ilimitado';
+    if (isExpired) return 'Expirado';
+    return '$daysLeft dias';
+  }
+}
+
+class SshAccount {
+  final int id;
+  final String name;
+  final String host;
+  final int port;
+  final String username;
+  final String? password;
+  final String? privateKey;
+  final String authMethod;
+  final String? label;
+  final bool isActive;
+
+  SshAccount({
+    required this.id,
+    required this.name,
+    required this.host,
+    this.port = 22,
+    required this.username,
+    this.password,
+    this.privateKey,
+    this.authMethod = 'password',
+    this.label,
+    this.isActive = true,
+  });
+
+  factory SshAccount.fromJson(Map<String, dynamic> json) {
+    return SshAccount(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      host: json['host'] as String? ?? '',
+      port: json['port'] as int? ?? 22,
+      username: json['username'] as String? ?? '',
+      password: json['password'] as String?,
+      privateKey: json['private_key'] as String?,
+      authMethod: json['auth_method'] as String? ?? 'password',
+      label: json['label'] as String?,
+      isActive: json['is_active'] == true,
+    );
+  }
+}
+
+class Payload {
+  final int id;
+  final String name;
+  final String type;
+  final String payload;
+  final String? proxyHost;
+  final int proxyPort;
+  final String? operator;
+  final int? sshAccountId;
+  final bool isActive;
+
+  Payload({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.payload,
+    this.proxyHost,
+    this.proxyPort = 80,
+    this.operator,
+    this.sshAccountId,
+    this.isActive = true,
+  });
+
+  factory Payload.fromJson(Map<String, dynamic> json) {
+    return Payload(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String? ?? '',
+      type: json['type'] as String? ?? 'ssh',
+      payload: json['payload'] as String? ?? '',
+      proxyHost: json['proxy_host'] as String?,
+      proxyPort: json['proxy_port'] as int? ?? 80,
+      operator: json['operator'] as String?,
+      sshAccountId: json['ssh_account_id'] as int?,
+      isActive: json['is_active'] == true,
+    );
+  }
+}
+
 class VpnStatus {
   final bool running;
   final int clients;

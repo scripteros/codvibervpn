@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _serverController = TextEditingController(text: 'https://servico.mobap.com.br:3007');
+  final _serverController = TextEditingController(text: 'http://servico.mobap.com.br:3007');
   SshAccount? _selectedServer;
   List<SshAccount> _servers = [];
   bool _loadingServers = false;

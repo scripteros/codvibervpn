@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/vpn_models.dart';
 
 class VpnProvider extends ChangeNotifier {
-  String _baseUrl = 'https://servico.mobap.com.br:3007';
+  String _baseUrl = 'http://servico.mobap.com.br:3007';
   String? _token;
   VpnUser? _user;
   VpnStatus? _status;

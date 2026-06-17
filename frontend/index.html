@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodViber VPN | Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .sidebar { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-right: 1px solid #334155; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; transition: all 0.2s; }
+    .card:hover { border-color: #3b82f6; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15); }
+    .btn-primary { background: #3b82f6; color: white; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn-danger { background: #ef4444; color: white; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-success { background: #22c55e; color: white; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-success:hover { background: #16a34a; }
+    .btn-warning { background: #f59e0b; color: white; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-ghost { background: transparent; color: #94a3b8; padding: 8px 16px; border-radius: 8px; border: 1px solid #334155; cursor: pointer; transition: all 0.2s; }
+    .btn-ghost:hover { background: #334155; color: #e2e8f0; }
+    .input-field { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; width: 100%; outline: none; transition: all 0.2s; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+    .input-field::placeholder { color: #64748b; }
+    select.input-field { appearance: auto; }
+    .stat-card { background: linear-gradient(135deg, #1e293b, #1a2332); border: 1px solid #334155; border-radius: 12px; padding: 20px; transition: all 0.2s; }
+    .stat-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .table-header { background: #1e293b; border-bottom: 2px solid #334155; padding: 12px 16px; font-weight: 600; color: #94a3b8; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
+    .table-row { border-bottom: 1px solid #1e293b; transition: all 0.15s; }
+    .table-row:hover { background: rgba(59, 130, 246, 0.05); }
+    .table-row td { padding: 12px 16px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(4px); }
+    .modal-content { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .modal-content h2 { font-size: 20px; font-weight: 600; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #334155; }
+    .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .badge-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-expired { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-online { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-offline { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); }
+    .nav-item { padding: 12px 20px; cursor: pointer; transition: all 0.2s; border-radius: 8px; margin: 2px 8px; color: #94a3b8; display: flex; align-items: center; gap: 12px; }
+    .nav-item:hover { background: rgba(59, 130, 246, 0.1); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .nav-item i { width: 20px; text-align: center; }
+    .loading-spinner { width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-bar { height: 8px; border-radius: 4px; background: #334155; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .toast { position: fixed; top: 20px; right: 20px; z-index: 100; padding: 14px 24px; border-radius: 10px; color: white; font-weight: 500; animation: slideIn 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .toast-success { background: #22c55e; }
+    .toast-error { background: #ef4444; }
+    .toast-info { background: #3b82f6; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .tabs { display: flex; gap: 4px; background: #0f172a; padding: 4px; border-radius: 10px; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #94a3b8; font-weight: 500; border: none; background: transparent; }
+    .tab.active { background: #1e293b; color: #3b82f6; }
+    .tab:hover:not(.active) { color: #e2e8f0; }
+    .speed-chart { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+    .metric-label { color: #64748b; font-size: 13px; margin-bottom: 4px; }
+    .metric-value { font-size: 24px; font-weight: 700; color: #e2e8f0; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); }
+    .login-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .login-card h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .login-card p { color: #64748b; margin-bottom: 30px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; color: #94a3b8; font-size: 14px; font-weight: 500; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot.online { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+    .status-dot.offline { background: #ef4444; }
+    .status-dot.pending { background: #f59e0b; }
+    @media (max-width: 768px) { .sidebar { width: 60px !important; } .sidebar .nav-label { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useCallback, useRef, createElement: h } = React;
+
+    // ============================================================
+    // Toast Component
+    // ============================================================
+    function Toast({ message, type, onClose }) {
+      useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+      }, [onClose]);
+      const bg = type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info';
+      const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+      return h('div', { className: `toast ${bg}` },
+        h('i', { className: `fas ${icon} mr-2` }),
+        message
+      );
+    }
+
+    // ============================================================
+    // Modal Component
+    // ============================================================
+    function Modal({ title, children, onClose, wide }) {
+      return h('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
+        h('div', { className: 'modal-content', style: wide ? { maxWidth: '800px' } : {} },
+          h('div', { className: 'flex items-center justify-between mb-4 pb-3 border-b border-gray-700' },
+            h('h2', { className: 'text-xl font-semibold m-0 p-0 border-0' }, title),
+            h('button', { onClick: onClose, className: 'text-gray-400 hover:text-white text-xl' }, '\u2715')
+          ),
+          children
+        )
+      );
+    }
+
+    // ============================================================
+    // API Helper
+    // ============================================================
+    const API_BASE = '';
+
+    function getToken() { return localStorage.getItem('token'); }
+
+    async function apiCall(path, options = {}) {
+      const token = getToken();
+      const headers = { 'Content-Type': 'application/json', ...options.headers };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+      const data = await res.json();
+      if (!res.ok && !data.ok) throw new Error(data.error || 'Erro na requisi\u00e7\u00e3o');
+      return data;
+    }
+
+    // ============================================================
+    // Login Page
+    // ============================================================
+    function LoginPage({ onLogin }) {
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+          const data = await apiCall('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+          });
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          onLogin(data.token, data.user);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return h('div', { className: 'login-container' },
+        h('div', { className: 'login-card' },
+          h('div', { className: 'text-center mb-8' },
+            h('div', { className: 'w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4' },
+              h('i', { className: 'fas fa-shield-halved text-white text-2xl' })
+            ),
+            h('h1', null, 'CodViber VPN'),
+            h('p', null, 'Painel de Administra\u00e7\u00e3o')
+          ),
+          error && h('div', { className: 'bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg mb-4 text-sm' }, error),
+          h('form', { onSubmit: handleSubmit },
+            h('div', { className: 'form-group' },
+              h('label', null, 'Usu\u00e1rio'),
+              h('input', {
+                className: 'input-field',
+                type: 'text',
+                placeholder: 'Digite seu usu\u00e1rio',
+                value: username,
+                onChange: (e) => setUsername(e.target.value),
+                required: true
+              })
+            ),
+            h('div', { className: 'form-group' },
+              h('label', null, 'Senha'),
+              h('input', {
+                className: 'input-field',
+                type: 'password',
+                placeholder: 'Digite sua senha',
+                value: password,
+                onChange: (e) => setPassword(e.target.value),
+                required: true
+              })
+            ),
+            h('button', {
+              type: 'submit',
+              className: 'btn-primary w-full py-3 mt-2 text-base',
+              disabled: loading
+            }, loading ? h('i', { className: 'fas fa-spinner fa-spin mr-2' }) : null, loading ? 'Entrando...' : 'Entrar')
+          )
+        )
+      );
+    }
+
+    // ============================================================
+    // Sidebar
+    // ============================================================
+    const navItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
+      { id: 'users', label: 'Usu\u00e1rios', icon: 'fa-users' },
+      { id: 'tunnels', label: 'T\u00faneis', icon: 'fa-network-wired' },
+      { id: 'monitor', label: 'Monitor', icon: 'fa-desktop' },
+      { id: 'online', label: 'Online', icon: 'fa-wifi' },
+    ];
+
+    function Sidebar({ activeTab, setActiveTab, onLogout }) {
+      return h('div', { className: 'sidebar fixed left-0 top-0 h-screen w-64 flex flex-col z-10' },
+        h('div', { className: 'p-5 border-b border-gray-700/50' },
+          h('div', { className: 'flex items-center gap-3' },
+            h('div', { className: 'w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center' },
+              h('i', { className: 'fas fa-shield-halved text-white' })
+            ),
+            h('div', null,
+              h('div', { className: 'font-bold text-lg' }, 'CodViber VPN'),
+              h('div', { className: 'text-xs text-gray-500' }, 'Admin Panel')
+            )
+          )
+        ),
+        h('div', { className: 'flex-1 py-4 overflow-y-auto' },
+          navItems.map(item =>
+            h('div', {
+              key: item.id,
+              className: `nav-item ${activeTab === item.id ? 'active' : ''}`,
+              onClick: () => setActiveTab(item.id)
+            },
+              h('i', { className: `fas ${item.icon}` }),
+              h('span', { className: 'nav-label' }, item.label)
+            )
+          )
+        ),
+        h('div', { className: 'p-4 border-t border-gray-700/50' },
+          h('button', {
+            onClick: onLogout,
+            className: 'nav-item w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10'
+          },
+            h('i', { className: 'fas fa-right-from-bracket' }),
+            h('span', { className: 'nav-label' }, 'Sair')
+          )
+        )
+      );
+    }
+
+    // ============================================================
+    // Dashboard Tab
+    // ============================================================
+    function Dashboard() {
+      const [stats, setStats] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      const loadStats = useCallback(async () => {
+        try {
+          const data = await apiCall('/api/stats/dashboard');
+          setStats(data.stats);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => { loadStats(); }, [loadStats]);
+
+      if (loading) {
+        return h('div', { className: 'flex items-center justify-center py-20' },
+          h('div', { className: 'loading-spinner' })
+        );
+      }
+
+      const cards = [
+        { label: 'Total de Usu\u00e1rios', value: stats?.totalUsers || 0, icon: 'fa-users', color: 'bg-blue-500', bg: 'bg-blue-500/10' },
+        { label: 'Usu\u00e1rios Ativos', value: stats?.activeUsers || 0, icon: 'fa-user-check', color: 'bg-green-500', bg: 'bg-green-500/10' },
+        { label: 'Expirando (7 dias)', value: stats?.expiringUsers || 0, icon: 'fa-clock', color: 'bg-yellow-500', bg: 'bg-yellow-500/10' },
+        { label: 'Expirados', value: stats?.expiredUsers || 0, icon: 'fa-user-slash', color: 'bg-red-500', bg: 'bg-red-500/10' },
+      ];
+
+      return h('div', null,
+        h('h1', { className: 'text-2xl font-bold mb-6' }, 'Dashboard'),
+        h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8' },
+          cards.map((card, i) =>
+            h('div', { key: i, className: 'stat-card flex items-center gap-4' },
+              h('div', { className: `stat-icon ${card.bg}` },
+                h('i', { className: `fas ${card.icon} ${card.color} text-white` })
+              ),
+              h('div', null,
+                h('div', { className: 'metric-label' }, card.label),
+                h('div', { className: 'metric-value' }, card.value)
+              )
+            )
+          )
+        ),
+        h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6' },
+          h('div', { className: 'card p-6' },
+            h('h3', { className: 'text-lg font-semibold mb-4 flex items-center gap-2' },
+              h('i', { className: 'fas fa-server text-blue-400' }), 'Status do Sistema'
+            ),
+            h('div', { className: 'space-y-4' },
+              h('div', { className: 'flex justify-between items-center' },
+                h('span', { className: 'text-gray-400' }, 'Contas SSH'),
+                h('span', { className: 'font-semibold' }, stats?.totalSshAccounts || 0)
+              ),
+              h('div', { className: 'flex justify-between items-center' },
+                h('span', { className: 'text-gray-400' }, 'Payloads'),
+                h('span', { className: 'font-semibold' }, stats?.totalPayloads || 0)
+              ),
+              h('div', { className: 'flex justify-between items-center' },
+                h('span', { className: 'text-gray-400' }, 'Online Agora'),
+                h('span', { className: 'font-semibold text-green-400' }, stats?.onlineNow || 0)
+              )
+            )
+          ),
+          h('div', { className: 'card p-6' },
+            h('h3', { className: 'text-lg font-semibold mb-4 flex items-center gap-2' },
+              h('i', { className: 'fas fa-clock-rotate-left text-yellow-400' }), 'Atividades Recentes'
+            ),
+            stats?.recentActivity && stats.recentActivity.length > 0
+              ? h('div', { className: 'space-y-3 max-h-64 overflow-y-auto' },
+                  stats.recentActivity.map((act, i) =>
+                    h('div', { key: i, className: 'flex items-start gap-3 text-sm border-b border-gray-700/30 pb-2' },
+                      h('i', { className: 'fas fa-circle text-[6px] text-blue-400 mt-2' }),
+                      h('div', null,
+                        h('div', null, act.details),
+                        h('div', { className: 'text-gray-500 text-xs' }, act.created_at)
+                      )
+                    )
+                  )
+                )
+              : h('div', { className: 'text-gray-500 text-center py-8' }, 'Nenhuma atividade recente')
+          )
+        )
+      );
+    }
+
+    // ============================================================
+    // Users Tab
+    // ============================================================
+    function Users() {
+      const [users, setUsers] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showModal, setShowModal] = useState(false);
+      const [editUser, setEditUser] = useState(null);
+      const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', device: 'any', access_days: '30', max_speed: '100 Mbps', active: true });
+      const [search, setSearch] = useState('');
+      const [toast, setToast] = useState(null);
+
+      const loadUsers = useCallback(async () => {
+        try {
+          const data = await apiCall(`/api/users${search ? '?search=' + encodeURIComponent(search) : ''}`);
+          setUsers(data.users || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      }, [search]);
+
+      useEffect(() => { loadUsers(); }, [loadUsers]);
+
+      const showToast = (msg, type) => {
+        setToast({ message: msg, type });
+      };
+
+      const openCreate = () => {
+        setEditUser(null);
+        setForm({ name: '', email: '', phone: '', password: '', device: 'any', access_days: '30', max_speed: '100 Mbps', active: true });
+        setShowModal(true);
+      };
+
+      const openEdit = (user) => {
+        setEditUser(user);
+        setForm({
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          password: '',
+          device: user.device || 'any',
+          access_days: String(user.access_days || '30'),
+          max_speed: user.max_speed || '100 Mbps',
+          active: !!user.active
+        });
+        setShowModal(true);
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          if (editUser) {
+            await apiCall(`/api/users/${editUser.id}`, {
+              method: 'PUT',
+              body: JSON.stringify(form)
+            });
+            showToast('Usu\u00e1rio atualizado com sucesso', 'success');
+          } else {
+            await apiCall('/api/users', {
+              method: 'POST',
+              body: JSON.stringify(form)
+            });
+            showToast('Usu\u00e1rio criado com sucesso', 'success');
+          }
+          setShowModal(false);
+          loadUsers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const handleDelete = async (id, name) => {
+        if (!confirm(`Tem certeza que deseja remover ${name}?`)) return;
+        try {
+          await apiCall(`/api/users/${id}`, { method: 'DELETE' });
+          showToast('Usu\u00e1rio removido', 'success');
+          loadUsers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const handleToggle = async (id) => {
+        try {
+          await apiCall(`/api/users/${id}/toggle-active`, { method: 'POST' });
+          loadUsers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      const handleExtend = async (id) => {
+        const days = prompt('Dias para estender:');
+        if (!days || isNaN(days) || days < 1) return;
+        try {
+          await apiCall(`/api/users/${id}/extend`, {
+            method: 'POST',
+            body: JSON.stringify({ days: parseInt(days) })
+          });
+          showToast(`Acesso estendido em ${days} dias`, 'success');
+          loadUsers();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      };
+
+      return h('div', null,
+        h('div', { className: 'flex items-center justify-between mb-6' },
+          h('h1', { className: 'text-2xl font-bold' }, 'Usu\u00e1rios'),
+          h('button', { onClick: openCreate, className: 'btn-primary flex items-center gap-2' },
+            h('i', { className: 'fas fa-plus' }), 'Novo Usu\u00e1rio'
+          )
+        ),
+        h('div', { className: 'mb-4' },
+          h('input', {
+            className: 'input-field max-w-md',
+            type: 'text',
+            placeholder: 'Pesquisar usu\u00e1rios...',
+            value: search,
+            onChange: (e) => setSearch(e.target.value)
+          })
+        ),
+        toast && h(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
+
+        // Modal
+        showModal && h(Modal, {
+          title: editUser ? 'Editar Usu\u00e1rio' : 'Novo Usu\u00e1rio',
+          onClose: () => setShowModal(false),
+          wide: true
+        },
+          h('form', { onSubmit: handleSubmit },
+            h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+              h('div', { className: 'form-group' },
+                h('label', null, 'Nome *'),
+                h('input', { className: 'input-field', type: 'text', value: form.name, onChange: (e) => setForm({...form, name: e.target.value}), required: true })
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Email *'),
+                h('input', { className: 'input-field', type: 'email', value: form.email, onChange: (e) => setForm({...form, email: e.target.value}), required: true })
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Telefone'),
+                h('input', { className: 'input-field', type: 'text', value: form.phone, onChange: (e) => setForm({...form, phone: e.target.value}) })
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, editUser ? 'Nova Senha (deixe vazio para manter)' : 'Senha *'),
+                h('input', { className: 'input-field', type: 'text', value: form.password, onChange: (e) => setForm({...form, password: e.target.value}), required: !editUser })
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Dispositivo'),
+                h('select', { className: 'input-field', value: form.device, onChange: (e) => setForm({...form, device: e.target.value}) },
+                  h('option', { value: 'any' }, 'Qualquer'),
+                  h('option', { value: 'android' }, 'Android'),
+                  h('option', { value: 'ios' }, 'iOS'),
+                  h('option', { value: 'windows' }, 'Windows'),
+                  h('option', { value: 'mac' }, 'Mac'),
+                  h('option', { value: 'linux' }, 'Linux')
+                )
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Dias de Acesso'),
+                h('input', { className: 'input-field', type: 'number', value: form.access_days, onChange: (e) => setForm({...form, access_days: e.target.value}), min: 1 })
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Velocidade M\u00e1xima'),
+                h('select', { className: 'input-field', value: form.max_speed, onChange: (e) => setForm({...form, max_speed: e.target.value}) },
+                  h('option', { value: '10 Mbps' }, '10 Mbps'),
+                  h('option', { value: '50 Mbps' }, '50 Mbps'),
+                  h('option', { value: '100 Mbps' }, '100 Mbps'),
+                  h('option', { value: '200 Mbps' }, '200 Mbps'),
+                  h('option', { value: '500 Mbps' }, '500 Mbps'),
+                  h('option', { value: '1 Gbps' }, '1 Gbps')
+                )
+              ),
+              h('div', { className: 'form-group' },
+                h('label', null, 'Ativo'),
+                h('div', { className: 'flex items-center gap-3 mt-2' },
+                  h('label', { className: 'flex items-center gap-2 cursor-pointer' },
+                    h('input', { type: 'checkbox', className: 'w-4 h-4', checked: form.active, onChange: (e) => setForm({...form, active: e.target.checked}) }),
+                    h('span', null, form.active ? 'Ativo' : 'Inativo')
+                  )
+                )
+              )
+            ),
+            h('div', { className: 'flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700' },
+              h('button', { type: 'button', onClick: () => setShowModal(false), className: 'btn-ghost' }, 'Cancelar'),
+              h('button', { type: 'submit', className: 'btn-primary' }, editUser ? 'Atualizar' : 'Criar Usu\u00e1rio')
+            )
+          )
+        ),
+
+        // Table
+        loading
+          ? h('div', { className: 'flex items-center justify-center py-20' }, h('div', { className: 'loading-spinner' }))
+          : h('div', { className: 'card overflow-hidden' },
+              h('div', { className: 'overflow-x-auto' },
+                h('table', { className: 'w-full' },
+                  h('thead', null,
+                    h('tr', { className: 'table-header' },
+                      h('th', { className: 'text-left py-3 px-4' }, 'Nome'),
+                      h('th', { className: 'text-left py-3 px-4 hidden md:table-cell' }, 'Email'),
+                      h('th', { className: 'text-left py-3 px-4 hidden lg:table-cell' }, 'Dispositivo'),
+                      h('th', { className: 'text-left py-3 px-4 hidden lg:table-cell' }, 'Expira'),
+                      h('th', { className: 'text-left py-3 px-4' }, 'Status'),
+                      h('th', { className: 'text-left py-3 px-4' }, 'A\u00e7\u00f5es')
+                    )
+                  ),
+                  h('tbody', null,
+                    users.length === 0
+                      ? h('tr', null,
+                          h('td', { colSpan: 6, className: 'text-center py-12 text-gray-500' }, 'Nenhum usu\u00e1rio encontrado')
+                        )
+                      : users.map(user =>
+                          h('tr', { key: user.id, className: 'table-row' },
+                            h('td', { className: 'py-3 px-4' },
+                              h('div', { className: 'font-medium' }, user.name),
+                              h('div', { className: 'text-xs text-gray-500 md:hidden' }, user.email)
+                            ),
+                            h('td', { className: 'py-3 px-4 hidden md:table-cell text-gray-400' }, user.email),
+                            h('td', { className: 'py-3 px-4 hidden lg:table-cell text-gray-400' }, user.device || 'any'),
+                            h('td', { className: 'py-3 px-4 hidden lg:table-cell' },
+                              user.expires_at
+                                ? h('span', { className: new Date(user.expires_at) < new Date() ? 'text-red-400' : 'text-gray-400' },
+                                    new Date(user.expires_at).toLocaleDateString('pt-BR')
+                                  )
+                                : h('span', { className: 'text-gray-500' }, 'Ilimitado')
+                            ),
+                            h('td', { className: 'py-3 px-4' },
+                              user.active && (!user.expires_at || new Date(user.expires_at) > new Date())
+                                ? h('span', { className: 'badge badge-active' }, 'Ativo')
+                                : user.expires_at && new Date(user.expires_at) < new Date()
+                                  ? h('span', { className: 'badge badge-expired' }, 'Expirado')
+                                  : h('span', { className: 'badge badge-pending' }, 'Pendente')
+                            ),
+                            h('td', { className: 'py-3 px-4' },
+                              h('div', { className: 'flex gap-2 flex-wrap' },
+                                h('button', { onClick: () => openEdit(user), className: 'btn-ghost text-xs py-1 px-3', title: 'Editar' },
+                                  h('i', { className: 'fas fa-edit' })
+                                ),
+                                h('button', { onClick: () => handleToggle(user.id), className: `text-xs py-1 px-3 rounded-lg border ${user.active ? 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10' : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}`, title: user.active ? 'Desativar' : 'Ativar' },
+                                  h('i', { className: `fas ${user.active ? 'fa-pause' : 'fa-play'}` })
+                                ),
+                                h('button', { onClick: () => handleExtend(user.id), className: 'text-xs py-1 px-3 rounded-lg border border-blue-500/30 text-blue-400 hover:bg-blue-500/10', title: 'Estender' },
+                                  h('i', { className: 'fas fa-clock' })
+                                ),
+                                h('button', { onClick: () => handleDelete(user.id, user.name), className: 'text-xs py-1 px-3 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10', title: 'Remover' },
+                                  h('i', { className: 'fas fa-trash' })
+                                )
+                              )
+                            )
+                          )
+                        )
+                  )
+                )
+              )
+          )
+      );
+    }
+
+    // ============================================================
+    // Tunnels Tab (SSH + Payloads)
+    // ============================================================
+    function Tunnels() {
+      const [tab, setTab] = useState('ssh');
+      const [accounts, setAccounts] = useState([]);
+      const [payloads, setPayloads] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showSSHModal, setShowSSHModal] = useState(false);
+      const [showPayloadModal, setShowPayloadModal] = useState(false);
+      const [editSSH, setEditSSH] = useState(null);
+      const [editPayload, setEditPayload] = useState(null);
+      const [sshForm, setSSHForm] = useState({ host: '', port: '22', username: '', password: '', private_key: '', location: '', max_speed: '100 Mbps', active: true });
+      const [payloadForm, setPayloadForm] = useState({ name: '', type: 'custom', host: '', port: '443', payload: '', sni: '', ssh_account_id: '', active: true });
+      const [toast, setToast] = useState(null);
+
+      const loadData = useCallback(async () => {
+        try {
+          const [accData, payData] = await Promise.all([
+            apiCall('/api/tunnels/ssh'),
+            apiCall('/api/tunnels/payloads')
+          ]);
+          setAccounts(accData.accounts || []);
+          setPayloads(payData.payloads || []);
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => { loadData(); }, [loadData]);
+
+      const showToast = (msg, type) => setToast({ message: msg, type });
+
+      // SSH CRUD
+      const openSSHCreate = () => {
+        setEditSSH(null);
+        setSSHForm({ host: '', port: '22', username: '', password: '', private_key: '', location: '', max_speed: '100 Mbps', active: true });
+        setShowSSHModal(true);
+      };
+
+      const openSSHEdit = (acc) => {
+        setEditSSH(acc);
+        setSSHForm({
+          host: acc.host,
+          port: String(acc.port || 22),
+          username: acc.username,
+          password: acc.password || '',
+          private_key: acc.private_key || '',
+          location: acc.location || '',
+          max_speed: acc.max_speed || '100 Mbps',
+          active: !!acc.active
+        });
+        setShowSSHModal(true);
+      };
+
+      const handleSSHSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          if (editSSH) {
+            await apiCall(`/api/tunnels/ssh/${editSSH.id}`, { method: 'PUT', body: JSON.stringify(sshForm) });
+            showToast('Conta SSH atualizada', 'success');
+          } else {
+            await apiCall('/api/tunnels/ssh', { method: 'POST', body: JSON.stringify(sshForm) });
+            showToast('Conta SSH criada', 'success');
+          }
+          setShowSSHModal(false);
+          loadData();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const handleSSHDelete = async (id) => {
+        if (!confirm('Remover esta conta SSH?')) return;
+        try {
+          await apiCall(`/api/tunnels/ssh/${id}`, { method: 'DELETE' });
+          showToast('Conta SSH removida', 'success');
+          loadData();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      // Payload CRUD
+      const openPayloadCreate = () => {
+        setEditPayload(null);
+        setPayloadForm({ name: '', type: 'custom', host: '', port: '443', payload: '', sni: '', ssh_account_id: accounts.length > 0 ? String(accounts[0].id) : '', active: true });
+        setShowPayloadModal(true);
+      };
+
+      const openPayloadEdit = (p) => {
+        setEditPayload(p);
+        setPayloadForm({
+          name: p.name,
+          type: p.type || 'custom',
+          host: p.host || '',
+          port: String(p.port || 443),
+          payload: p.payload || '',
+          sni: p.sni || '',
+          ssh_account_id: p.ssh_account_id ? String(p.ssh_account_id) : '',
+          active: !!p.active
+        });
+        setShowPayloadModal(true);
+      };
+
+      const applyTemplate = (template) => {
+        const templates = {
+          tim: { name: 'TIM Direct', host: 'tim.br', port: '443', payload: 'CONNECT [host_port] HTTP/1.1\r\nHost: tim.br\r\n\r\n', sni: 'tim.br' },
+          vivo: { name: 'Vivo Direct', host: 'vivo.com.br', port: '443', payload: 'CONNECT [host_port] HTTP/1.1\r\nHost: vivo.com.br\r\n\r\n', sni: 'vivo.com.br' },
+          claro: { name: 'Claro Direct', host: 'claro.com.br', port: '443', payload: 'CONNECT [host_port] HTTP/1.1\r\nHost: claro.com.br\r\n\r\n', sni: 'claro.com.br' }
+        };
+        const t = templates[template];
+        if (t) {
+          setPayloadForm({ ...payloadForm, ...t, type: template });
+        }
+      };
+
+      const handlePayloadSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          if (editPayload) {
+            await apiCall(`/api/tunnels/payloads/${editPayload.id}`, { method: 'PUT', body: JSON.stringify(payloadForm) });
+            showToast('Payload atualizado', 'success');
+          } else {
+            await apiCall('/api/tunnels/payloads', { method: 'POST', body: JSON.stringify(payloadForm) });
+            showToast('Payload criado', 'success');
+          }
+          setShowPayloadModal(false);
+          loadData();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      const handlePayloadDelete = async (id) => {
+        if (!confirm('Remover este payload?')) return;
+        try {
+          await apiCall(`/api/tunnels/payloads/${id}`, { method: 'DELETE' });
+          showToast('Payload removido', 'success');
+          loadData();
+        } catch (err) { showToast(err.message, 'error'); }
+      };
+
+      if (loading) {
+        return h('div', { className: 'flex items-center justify-center py-20' }, h('div', { className: 'loading-spinner' }));
+      }
+
+      return h('div', null,
+        h('h1', { className: 'text-2xl font-bold mb-6' }, 'T\u00faneis'),
+        toast && h(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
+
+        h('div', { className: 'tabs' },
+          h('button', { className: `tab ${tab === 'ssh' ? 'active' : ''}`, onClick: () => setTab('ssh') },
+            h('i', { className: 'fas fa-terminal mr-2' }), 'Contas SSH'
+          ),
+          h('button', { className: `tab ${tab === 'payloads' ? 'active' : ''}`, onClick: () => setTab('payloads') },
+            h('i', { className: 'fas fa-code mr-2' }), 'Payloads'
+          )
+        ),
+
+        // SSH Accounts
+        tab === 'ssh' && h('div', null,
+          h('div', { className: 'flex justify-end mb-4' },
+            h('button', { onClick: openSSHCreate, className: 'btn-primary flex items-center gap-2' },
+              h('i', { className: 'fas fa-plus' }), 'Nova Conta SSH'
+            )
+          ),
+          accounts.length === 0
+            ? h('div', { className: 'card p-12 text-center text-gray-500' }, 'Nenhuma conta SSH configurada')
+            : h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
+                accounts.map(acc =>
+                  h('div', { key: acc.id, className: 'card p-5' },
+                    h('div', { className: 'flex items-start justify-between mb-3' },
+                      h('div', null,
+                        h('div', { className: 'font-semibold text-lg' }, acc.host),
+                        h('div', { className: 'text-sm text-gray-400' }, acc.location || 'Sem localiza\u00e7\u00e3o')
+                      ),
+                      h('span', { className: acc.active ? 'badge badge-active' : 'badge badge-pending' }, acc.active ? 'Ativo' : 'Inativo')
+                    ),
+                    h('div', { className: 'space-y-1 text-sm text-gray-400 mb-4' },
+                      h('div', null, h('span', { className: 'text-gray-500' }, 'Usu\u00e1rio: '), acc.username),
+                      h('div', null, h('span', { className: 'text-gray-500' }, 'Porta: '), acc.port),
+                      h('div', null, h('span', { className: 'text-gray-500' }, 'Velocidade: '), acc.max_speed)
+                    ),
+                    h('div', { className: 'flex gap-2' },
+                      h('button', { onClick: () => openSSHEdit(acc), className: 'btn-ghost text-xs py-1 px-3 flex items-center gap-1' },
+                        h('i', { className: 'fas fa-edit' }), 'Editar'
+                      ),
+                      h('button', { onClick: () => handleSSHDelete(acc.id), className: 'text-xs py-1 px-3 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 flex items-center gap-1' },
+                        h('i', { className: 'fas fa-trash' }), 'Remover'
+                      )
+                    )
+                  )
+                )
+              ),
+
+          // SSH Modal
+          showSSHModal && h(Modal, { title: editSSH ? 'Editar Conta SSH' : 'Nova Conta SSH', onClose: () => setShowSSHModal(false) },
+            h('form', { onSubmit: handleSSHSubmit },
+              h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Host *'),
+                  h('input', { className: 'input-field', type: 'text', value: sshForm.host, onChange: (e) => setSSHForm({...sshForm, host: e.target.value}), required: true, placeholder: 'ex: sg1.codviber.com' })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Porta'),
+                  h('input', { className: 'input-field', type: 'number', value: sshForm.port, onChange: (e) => setSSHForm({...sshForm, port: e.target.value}) })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Usu\u00e1rio *'),
+                  h('input', { className: 'input-field', type: 'text', value: sshForm.username, onChange: (e) => setSSHForm({...sshForm, username: e.target.value}), required: true })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Senha'),
+                  h('input', { className: 'input-field', type: 'text', value: sshForm.password, onChange: (e) => setSSHForm({...sshForm, password: e.target.value}) })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Localiza\u00e7\u00e3o'),
+                  h('input', { className: 'input-field', type: 'text', value: sshForm.location, onChange: (e) => setSSHForm({...sshForm, location: e.target.value}), placeholder: 'ex: Singapore' })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Velocidade M\u00e1xima'),
+                  h('select', { className: 'input-field', value: sshForm.max_speed, onChange: (e) => setSSHForm({...sshForm, max_speed: e.target.value}) },
+                    h('option', { value: '10 Mbps' }, '10 Mbps'),
+                    h('option', { value: '50 Mbps' }, '50 Mbps'),
+                    h('option', { value: '100 Mbps' }, '100 Mbps'),
+                    h('option', { value: '200 Mbps' }, '200 Mbps'),
+                    h('option', { value: '500 Mbps' }, '500 Mbps'),
+                    h('option', { value: '1 Gbps' }, '1 Gbps')
+                  )
+                )
+              ),
+              h('div', { className: 'form-group mt-4' },
+                h('label', { className: 'flex items-center gap-2 cursor-pointer' },
+                  h('input', { type: 'checkbox', className: 'w-4 h-4', checked: sshForm.active, onChange: (e) => setSSHForm({...sshForm, active: e.target.checked}) }),
+                  h('span', null, 'Ativo')
+                )
+              ),
+              h('div', { className: 'flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700' },
+                h('button', { type: 'button', onClick: () => setShowSSHModal(false), className: 'btn-ghost' }, 'Cancelar'),
+                h('button', { type: 'submit', className: 'btn-primary' }, editSSH ? 'Atualizar' : 'Criar')
+              )
+            )
+          )
+        ),
+
+        // Payloads
+        tab === 'payloads' && h('div', null,
+          h('div', { className: 'flex justify-between items-center mb-4 flex-wrap gap-3' },
+            h('div', { className: 'flex gap-2' },
+              h('button', { onClick: () => applyTemplate('tim'), className: 'btn-ghost text-xs py-1 px-3' }, 'TIM'),
+              h('button', { onClick: () => applyTemplate('vivo'), className: 'btn-ghost text-xs py-1 px-3' }, 'Vivo'),
+              h('button', { onClick: () => applyTemplate('claro'), className: 'btn-ghost text-xs py-1 px-3' }, 'Claro')
+            ),
+            h('button', { onClick: openPayloadCreate, className: 'btn-primary flex items-center gap-2' },
+              h('i', { className: 'fas fa-plus' }), 'Novo Payload'
+            )
+          ),
+          payloads.length === 0
+            ? h('div', { className: 'card p-12 text-center text-gray-500' }, 'Nenhum payload configurado')
+            : h('div', { className: 'grid grid-cols-1 gap-4' },
+                payloads.map(p =>
+                  h('div', { key: p.id, className: 'card p-5' },
+                    h('div', { className: 'flex items-start justify-between mb-3' },
+                      h('div', null,
+                        h('div', { className: 'font-semibold' }, p.name),
+                        h('div', { className: 'text-sm text-gray-400' }, 'Tipo: ', p.type || 'custom')
+                      ),
+                      h('span', { className: p.active ? 'badge badge-active' : 'badge badge-pending' }, p.active ? 'Ativo' : 'Inativo')
+                    ),
+                    h('div', { className: 'text-sm text-gray-400 mb-3 space-y-1' },
+                      p.ssh_host && h('div', null, h('span', { className: 'text-gray-500' }, 'SSH: '), p.ssh_host, ' (', p.ssh_username, ')'),
+                      h('div', null, h('span', { className: 'text-gray-500' }, 'Host: '), p.host || '-'),
+                      h('div', null, h('span', { className: 'text-gray-500' }, 'Porta: '), p.port),
+                      p.sni && h('div', null, h('span', { className: 'text-gray-500' }, 'SNI: '), p.sni)
+                    ),
+                    h('pre', { className: 'bg-gray-900 rounded-lg p-3 text-xs text-green-400 overflow-x-auto max-h-24' }, p.payload),
+                    h('div', { className: 'flex gap-2 mt-3' },
+                      h('button', { onClick: () => openPayloadEdit(p), className: 'btn-ghost text-xs py-1 px-3 flex items-center gap-1' },
+                        h('i', { className: 'fas fa-edit' }), 'Editar'
+                      ),
+                      h('button', { onClick: () => handlePayloadDelete(p.id), className: 'text-xs py-1 px-3 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 flex items-center gap-1' },
+                        h('i', { className: 'fas fa-trash' }), 'Remover'
+                      )
+                    )
+                  )
+                )
+              ),
+
+          // Payload Modal
+          showPayloadModal && h(Modal, { title: editPayload ? 'Editar Payload' : 'Novo Payload', onClose: () => setShowPayloadModal(false), wide: true },
+            h('form', { onSubmit: handlePayloadSubmit },
+              h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Nome *'),
+                  h('input', { className: 'input-field', type: 'text', value: payloadForm.name, onChange: (e) => setPayloadForm({...payloadForm, name: e.target.value}), required: true })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Tipo'),
+                  h('select', { className: 'input-field', value: payloadForm.type, onChange: (e) => setPayloadForm({...payloadForm, type: e.target.value}) },
+                    h('option', { value: 'custom' }, 'Custom'),
+                    h('option', { value: 'tim' }, 'TIM'),
+                    h('option', { value: 'vivo' }, 'Vivo'),
+                    h('option', { value: 'claro' }, 'Claro'),
+                    h('option', { value: 'ssh' }, 'SSH Direct'),
+                    h('option', { value: 'ssl' }, 'SSL/TLS')
+                  )
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Host'),
+                  h('input', { className: 'input-field', type: 'text', value: payloadForm.host, onChange: (e) => setPayloadForm({...payloadForm, host: e.target.value}) })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Porta'),
+                  h('input', { className: 'input-field', type: 'number', value: payloadForm.port, onChange: (e) => setPayloadForm({...payloadForm, port: e.target.value}) })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'SNI'),
+                  h('input', { className: 'input-field', type: 'text', value: payloadForm.sni, onChange: (e) => setPayloadForm({...payloadForm, sni: e.target.value}) })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Conta SSH'),
+                  h('select', { className: 'input-field', value: payloadForm.ssh_account_id, onChange: (e) => setPayloadForm({...payloadForm, ssh_account_id: e.target.value}) },
+                    h('option', { value: '' }, 'Nenhuma'),
+                    accounts.map(acc => h('option', { key: acc.id, value: String(acc.id) }, `${acc.host} (${acc.location || 'sem local'})`))
+                  )
+                )
+              ),
+              h('div', { className: 'form-group mt-4' },
+                h('label', null, 'Payload *'),
+                h('textarea', {
+                  className: 'input-field font-mono text-sm',
+                  rows: 5,
+                  value: payloadForm.payload,
+                  onChange: (e) => setPayloadForm({...payloadForm, payload: e.target.value}),
+                  required: true,
+                  placeholder: 'CONNECT [host_port] HTTP/1.1...'
+                })
+              ),
+              h('div', { className: 'form-group mt-2' },
+                h('label', { className: 'flex items-center gap-2 cursor-pointer' },
+                  h('input', { type: 'checkbox', className: 'w-4 h-4', checked: payloadForm.active, onChange: (e) => setPayloadForm({...payloadForm, active: e.target.checked}) }),
+                  h('span', null, 'Ativo')
+                )
+              ),
+              h('div', { className: 'flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700' },
+                h('button', { type: 'button', onClick: () => setShowPayloadModal(false), className: 'btn-ghost' }, 'Cancelar'),
+                h('button', { type: 'submit', className: 'btn-primary' }, editPayload ? 'Atualizar' : 'Criar')
+              )
+            )
+          )
+        )
+      );
+    }
+
+    // ============================================================
+    // Monitor Tab
+    // ============================================================
+    function Monitor() {
+      const [stats, setStats] = useState(null);
+      const [speedData, setSpeedData] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      const loadStats = useCallback(async () => {
+        try {
+          const data = await apiCall('/api/stats/status');
+          setStats(data.stats);
+          if (data.stats) {
+            setSpeedData(prev => {
+              const now = Date.now();
+              const newPoint = {
+                time: now,
+                download: Math.random() * 50 + 10,
+                upload: Math.random() * 20 + 5
+              };
+              const next = [...prev, newPoint].slice(-30);
+              return next;
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        loadStats();
+        const interval = setInterval(loadStats, 3000);
+        return () => clearInterval(interval);
+      }, [loadStats]);
+
+      if (loading) {
+        return h('div', { className: 'flex items-center justify-center py-20' }, h('div', { className: 'loading-spinner' }));
+      }
+
+      const maxSpeed = Math.max(...speedData.map(d => d.download + d.upload), 1);
+
+      return h('div', null,
+        h('h1', { className: 'text-2xl font-bold mb-6' }, 'Monitor do Servidor'),
+
+        // System Metrics
+        h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6' },
+          h('div', { className: 'stat-card' },
+            h('div', { className: 'flex items-center gap-3 mb-3' },
+              h('div', { className: 'stat-icon bg-blue-500/10' }, h('i', { className: 'fas fa-microchip text-blue-400' })),
+              h('div', null, h('div', { className: 'metric-label' }, 'CPU'), h('div', { className: 'metric-value' }, stats?.cpu?.usage?.toFixed(1) || '0', '%'))
+            ),
+            h('div', { className: 'progress-bar' },
+              h('div', { className: 'progress-fill bg-blue-500', style: { width: `${Math.min(stats?.cpu?.usage || 0, 100)}%` } })
+            ),
+            h('div', { className: 'text-xs text-gray-500 mt-2' }, stats?.cpu?.cores + ' n\u00facleos')
+          ),
+          h('div', { className: 'stat-card' },
+            h('div', { className: 'flex items-center gap-3 mb-3' },
+              h('div', { className: 'stat-icon bg-green-500/10' }, h('i', { className: 'fas fa-memory text-green-400' })),
+              h('div', null, h('div', { className: 'metric-label' }, 'RAM'), h('div', { className: 'metric-value' }, stats?.ram?.percent || 0, '%'))
+            ),
+            h('div', { className: 'progress-bar' },
+              h('div', { className: 'progress-fill bg-green-500', style: { width: `${stats?.ram?.percent || 0}%` } })
+            ),
+            h('div', { className: 'text-xs text-gray-500 mt-2' }, `${stats?.ram?.used || 0} MB / ${stats?.ram?.total || 0} MB`)
+          ),
+          h('div', { className: 'stat-card' },
+            h('div', { className: 'flex items-center gap-3 mb-3' },
+              h('div', { className: 'stat-icon bg-yellow-500/10' }, h('i', { className: 'fas fa-hard-drive text-yellow-400' })),
+              h('div', null, h('div', { className: 'metric-label' }, 'Disco'), h('div', { className: 'metric-value' }, stats?.disk?.percent || '0%'))
+            ),
+            h('div', { className: 'progress-bar' },
+              h('div', { className: 'progress-fill bg-yellow-500', style: { width: `${parseInt(stats?.disk?.percent || '0')}%` } })
+            ),
+            h('div', { className: 'text-xs text-gray-500 mt-2' }, `${stats?.disk?.used || '0'} / ${stats?.disk?.total || '0'}`)
+          ),
+          h('div', { className: 'stat-card' },
+            h('div', { className: 'flex items-center gap-3 mb-3' },
+              h('div', { className: 'stat-icon bg-purple-500/10' }, h('i', { className: 'fas fa-clock text-purple-400' })),
+              h('div', null, h('div', { className: 'metric-label' }, 'Uptime'), h('div', { className: 'metric-value text-lg' }, stats?.uptime?.human || 'N/A'))
+            ),
+            h('div', { className: 'flex items-center gap-2 mt-3' },
+              h('span', { className: `status-dot ${stats?.vpn?.status === 'connected' ? 'online' : 'offline'}` }),
+              h('span', { className: 'text-sm' }, 'VPN: ', stats?.vpn?.status === 'connected' ? 'Conectada' : 'Desconectada')
+            ),
+            h('div', { className: 'text-xs text-gray-500 mt-2' }, `Online: ${stats?.online_users || 0} usu\u00e1rios`)
+          )
+        ),
+
+        // Speed Chart
+        h('div', { className: 'speed-chart' },
+          h('div', { className: 'flex items-center justify-between mb-4' },
+            h('h3', { className: 'text-lg font-semibold flex items-center gap-2' },
+              h('i', { className: 'fas fa-chart-line text-blue-400' }), 'Tr\u00e1fego em Tempo Real'
+            ),
+            h('div', { className: 'flex gap-4 text-sm' },
+              h('span', { className: 'flex items-center gap-1' },
+                h('span', { className: 'w-3 h-3 rounded-full bg-blue-500 inline-block' }), 'Download'
+              ),
+              h('span', { className: 'flex items-center gap-1' },
+                h('span', { className: 'w-3 h-3 rounded-full bg-green-500 inline-block' }), 'Upload'
+              )
+            )
+          ),
+          h('div', { className: 'relative h-48 bg-gray-900 rounded-lg p-4' },
+            speedData.length < 2
+              ? h('div', { className: 'flex items-center justify-center h-full text-gray-500' }, 'Aguardando dados...')
+              : h('svg', { viewBox: `0 0 ${speedData.length * 20} 200`, className: 'w-full h-full', preserveAspectRatio: 'none' },
+                  h('defs', null,
+                    h('linearGradient', { id: 'dlGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+                      h('stop', { offset: '0%', stopColor: '#3b82f6', stopOpacity: '0.4' }),
+                      h('stop', { offset: '100%', stopColor: '#3b82f6', stopOpacity: '0' })
+                    ),
+                    h('linearGradient', { id: 'ulGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+                      h('stop', { offset: '0%', stopColor: '#22c55e', stopOpacity: '0.4' }),
+                      h('stop', { offset: '100%', stopColor: '#22c55e', stopOpacity: '0' })
+                    )
+                  ),
+                  h('polyline', {
+                    fill: 'none',
+                    stroke: '#3b82f6',
+                    strokeWidth: '2',
+                    points: speedData.map((d, i) => `${i * 20},${200 - (d.download / maxSpeed) * 180}`).join(' ')
+                  }),
+                  h('polygon', {
+                    fill: 'url(#dlGrad)',
+                    points: speedData.map((d, i) => `${i * 20},${200 - (d.download / maxSpeed) * 180}`).join(' ')
+                      + ` ${(speedData.length - 1) * 20},200 0,200`
+                  }),
+                  h('polyline', {
+                    fill: 'none',
+                    stroke: '#22c55e',
+                    strokeWidth: '2',
+                    points: speedData.map((d, i) => `${i * 20},${200 - (d.upload / maxSpeed) * 180}`).join(' ')
+                  }),
+                  h('polygon', {
+                    fill: 'url(#ulGrad)',
+                    points: speedData.map((d, i) => `${i * 20},${200 - (d.upload / maxSpeed) * 180}`).join(' ')
+                      + ` ${(speedData.length - 1) * 20},200 0,200`
+                  })
+                ),
+            h('div', { className: 'absolute bottom-2 left-4 text-xs text-gray-500' },
+              speedData.length > 0 && `${(speedData[speedData.length - 1].download).toFixed(1)} Mbps / ${(speedData[speedData.length - 1].upload).toFixed(1)} Mbps`
+            )
+          )
+        ),
+
+        // Server Info
+        h('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6' },
+          h('div', { className: 'card p-6' },
+            h('h3', { className: 'text-lg font-semibold mb-4' }, 'Informa\u00e7\u00f5es do Servidor'),
+            h('div', { className: 'space-y-3 text-sm' },
+              h('div', { className: 'flex justify-between' }, h('span', { className: 'text-gray-400' }, 'Modelo CPU'), h('span', null, stats?.cpu?.model || 'N/A')),
+              h('div', { className: 'flex justify-between' }, h('span', { className: 'text-gray-400' }, 'N\u00facleos'), h('span', null, stats?.cpu?.cores || 'N/A')),
+              h('div', { className: 'flex justify-between' }, h('span', { className: 'text-gray-400' }, 'RAM Total'), h('span', null, `${stats?.ram?.total || 0} MB`)),
+              h('div', { className: 'flex justify-between' }, h('span', { className: 'text-gray-400' }, 'Disco Total'), h('span', null, stats?.disk?.total || 'N/A')),
+              h('div', { className: 'flex justify-between' }, h('span', { className: 'text-gray-400' }, 'Interface VPN'), h('span', null, stats?.vpn?.interface || 'wg0'))
+            )
+          ),
+          h('div', { className: 'card p-6' },
+            h('h3', { className: 'text-lg font-semibold mb-4' }, 'WireGuard Status'),
+            h('div', { className: 'flex items-center gap-3 mb-4' },
+              h('span', { className: `status-dot ${stats?.vpn?.status === 'connected' ? 'online' : 'offline'}`, style: { width: '12px', height: '12px' } }),
+              h('span', { className: 'text-lg font-semibold' }, stats?.vpn?.status === 'connected' ? 'Conectado' : 'Desconectado')
+            ),
+            h('div', { className: 'text-sm text-gray-400 space-y-2' },
+              h('div', null, 'Para gerenciar a VPN, use os comandos:'),
+              h('pre', { className: 'bg-gray-900 rounded p-3 mt-2 text-xs' },
+                'wg-quick up wg0    # Ativar VPN\nwg-quick down wg0  # Desativar VPN\nwg show             # Ver status'
+              )
+            )
+          )
+        )
+      );
+    }
+
+    // ============================================================
+    // Online Users Tab
+    // ============================================================
+    function OnlineUsers() {
+      const [onlineUsers, setOnlineUsers] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      const loadOnline = useCallback(async () => {
+        try {
+          const data = await apiCall('/api/online-users');
+          setOnlineUsers(data.online_users || []);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      useEffect(() => {
+        loadOnline();
+        const interval = setInterval(loadOnline, 5000);
+        return () => clearInterval(interval);
+      }, [loadOnline]);
+
+      return h('div', null,
+        h('div', { className: 'flex items-center justify-between mb-6' },
+          h('h1', { className: 'text-2xl font-bold' }, 'Usu\u00e1rios Online'),
+          h('div', { className: 'flex items-center gap-2 text-sm text-gray-400' },
+            h('span', { className: 'status-dot online' }),
+            h('span', null, onlineUsers.length, ' conectado(s)')
+          )
+        ),
+        loading
+          ? h('div', { className: 'flex items-center justify-center py-20' }, h('div', { className: 'loading-spinner' }))
+          : onlineUsers.length === 0
+            ? h('div', { className: 'card p-12 text-center' },
+                h('i', { className: 'fas fa-wifi text-4xl text-gray-600 mb-4' }),
+                h('div', { className: 'text-gray-500 text-lg' }, 'Nenhum usu\u00e1rio online no momento'),
+                h('div', { className: 'text-gray-600 text-sm mt-2' }, 'Conecte-se \u00e0 VPN para aparecer aqui')
+              )
+            : h('div', { className: 'card overflow-hidden' },
+                h('div', { className: 'overflow-x-auto' },
+                  h('table', { className: 'w-full' },
+                    h('thead', null,
+                      h('tr', { className: 'table-header' },
+                        h('th', { className: 'text-left py-3 px-4' }, 'Usu\u00e1rio'),
+                        h('th', { className: 'text-left py-3 px-4 hidden md:table-cell' }, 'Dispositivo'),
+                        h('th', { className: 'text-left py-3 px-4 hidden md:table-cell' }, 'IP'),
+                        h('th', { className: 'text-left py-3 px-4 hidden lg:table-cell' }, 'Conectado'),
+                        h('th', { className: 'text-left py-3 px-4' }, '\u00daltimo Heartbeat'),
+                        h('th', { className: 'text-left py-3 px-4 hidden lg:table-cell' }, 'Tr\u00e1fego')
+                      )
+                    ),
+                    h('tbody', null,
+                      onlineUsers.map(u =>
+                        h('tr', { key: u.id, className: 'table-row' },
+                          h('td', { className: 'py-3 px-4' },
+                            h('div', { className: 'flex items-center gap-2' },
+                              h('span', { className: 'status-dot online' }),
+                              h('div', null,
+                                h('div', { className: 'font-medium' }, u.user_name || u.username),
+                                h('div', { className: 'text-xs text-gray-500' }, u.user_email || '')
+                              )
+                            )
+                          ),
+                          h('td', { className: 'py-3 px-4 hidden md:table-cell text-gray-400' }, u.device || '-'),
+                          h('td', { className: 'py-3 px-4 hidden md:table-cell text-gray-400 font-mono text-sm' }, u.ip_address || '-'),
+                          h('td', { className: 'py-3 px-4 hidden lg:table-cell text-gray-400' },
+                            u.connected_at ? new Date(u.connected_at + 'Z').toLocaleString('pt-BR') : '-'
+                          ),
+                          h('td', { className: 'py-3 px-4 text-sm' },
+                            u.last_heartbeat
+                              ? h('span', {
+                                  className: Date.now() - new Date(u.last_heartbeat + 'Z').getTime() < 60000
+                                    ? 'text-green-400' : 'text-yellow-400'
+                                }, new Date(u.last_heartbeat + 'Z').toLocaleTimeString('pt-BR'))
+                              : '-'
+                          ),
+                          h('td', { className: 'py-3 px-4 hidden lg:table-cell text-sm text-gray-400' },
+                            u.bytes_received > 0 || u.bytes_sent > 0
+                              ? `${formatBytes(u.bytes_received)} / ${formatBytes(u.bytes_sent)}`
+                              : '-'
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+      );
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ============================================================
+    // Main App
+    // ============================================================
+    function App() {
+      const [token, setToken] = useState(localStorage.getItem('token'));
+      const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+      const [activeTab, setActiveTab] = useState('dashboard');
+
+      const handleLogin = (newToken, newUser) => {
+        setToken(newToken);
+        setUser(newUser);
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser({});
+      };
+
+      if (!token) {
+        return h(LoginPage, { onLogin: handleLogin });
+      }
+
+      const renderTab = () => {
+        switch (activeTab) {
+          case 'dashboard': return h(Dashboard);
+          case 'users': return h(Users);
+          case 'tunnels': return h(Tunnels);
+          case 'monitor': return h(Monitor);
+          case 'online': return h(OnlineUsers);
+          default: return h(Dashboard);
+        }
+      };
+
+      return h('div', { className: 'flex' },
+        h(Sidebar, { activeTab, setActiveTab, onLogout: handleLogout }),
+        h('main', { className: 'flex-1 ml-64 p-6 min-h-screen' },
+          renderTab()
+        )
+      );
+    }
+
+    // ============================================================
+    // Render
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(h(App));
+  </script>
+</body>
+</html>
